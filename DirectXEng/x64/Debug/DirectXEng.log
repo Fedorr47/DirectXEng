@@ -1,0 +1,4 @@
+﻿  main.cpp
+D:\C++projects\DirectXEng\main.cpp(756,19): warning C4244: '=': conversion from 'int' to 'FLOAT', possible loss of data
+D:\C++projects\DirectXEng\main.cpp(757,20): warning C4244: '=': conversion from 'int' to 'FLOAT', possible loss of data
+  DirectXEng.vcxproj -> D:\C++projects\DirectXEng\x64\Debug\DirectXEng.exe
