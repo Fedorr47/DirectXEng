@@ -9,11 +9,11 @@
 #include "Common/RenderItem.h"
 #include "LoadM3d.h"
 
+const int gNumFrameResources = 3;
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
-
-const int gNumFrameResources = 3;
 
 class DirextXEng : public D3DApp
 {

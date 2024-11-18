@@ -3,7 +3,7 @@
 #include <DirectXMath.h>
 #include "MathHelper.h"
 #include "d3dUtil.h"
-#include "Meshes/SkinnedMesh.h"
+#include "SkinnedMesh.h"
 
 enum class RenderLayer : int
 {
