@@ -1,7 +1,3 @@
-//***************************************************************************************
-// DirextXEng.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
 #include "Common/d3dApp.h"
 #include "Common/MathHelper.h"
 #include "Common/UploadBuffer.h"
@@ -10,7 +6,7 @@
 #include "FrameResource/FrameResource.h"
 #include "Shadow/ShadowMap.h"
 #include "SSAO/Ssao.h"
-#include "SkinnedData.h"
+#include "Common/RenderItem.h"
 #include "LoadM3d.h"
 
 using Microsoft::WRL::ComPtr;
@@ -18,80 +14,6 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 
 const int gNumFrameResources = 3;
-
-struct SkinnedModelInstance
-{
-    SkinnedData* SkinnedInfo = nullptr;
-    std::vector<DirectX::XMFLOAT4X4> FinalTransforms;
-    std::string ClipName;
-    float TimePos = 0.0f;
-
-    // Called every frame and increments the time position, interpolates the 
-    // animations for each bone based on the current animation clip, and 
-    // generates the final transforms which are ultimately set to the effect
-    // for processing in the vertex shader.
-    void UpdateSkinnedAnimation(float dt)
-    {
-        TimePos += dt;
-
-        // Loop animation
-        if(TimePos > SkinnedInfo->GetClipEndTime(ClipName))
-            TimePos = 0.0f;
-
-        // Compute the final transforms for this time position.
-        SkinnedInfo->GetFinalTransforms(ClipName, TimePos, FinalTransforms);
-    }
-};
-
-// Lightweight structure stores parameters to draw a shape.  This will
-// vary from app-to-app.
-struct RenderItem
-{
-	RenderItem() = default;
-    RenderItem(const RenderItem& rhs) = delete;
- 
-    // World matrix of the shape that describes the object's local space
-    // relative to the world space, which defines the position, orientation,
-    // and scale of the object in the world.
-    XMFLOAT4X4 World = MathHelper::Identity4x4();
-
-	XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
-
-	// Dirty flag indicating the object data has changed and we need to update the constant buffer.
-	// Because we have an object cbuffer for each FrameResource, we have to apply the
-	// update to each FrameResource.  Thus, when we modify obect data we should set 
-	// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
-	int NumFramesDirty = gNumFrameResources;
-
-	// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
-	UINT ObjCBIndex = -1;
- 
-	Material* Mat = nullptr;
-	MeshGeometry* Geo = nullptr;
-
-    // Primitive topology.
-    D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-
-    // DrawIndexedInstanced parameters.
-    UINT IndexCount = 0;
-    UINT StartIndexLocation = 0;
-    int BaseVertexLocation = 0;
-	
-	// Only applicable to skinned render-items.
-    UINT SkinnedCBIndex = -1;
-	
-    // nullptr if this render-item is not animated by skinned mesh.
-    SkinnedModelInstance* SkinnedModelInst = nullptr;
-};
-
-enum class RenderLayer : int
-{
-	Opaque = 0,
-    SkinnedOpaque,
-    Debug,
-	Sky,
-	Count
-};
 
 class DirextXEng : public D3DApp
 {
@@ -277,7 +199,6 @@ bool DirextXEng::Initialize()
         mCommandList.Get(),
         mClientWidth, mClientHeight);
 
-	
     LoadSkinnedModel();
 	LoadTextures();
     BuildRootSignature();
@@ -1608,7 +1529,7 @@ void DirextXEng::BuildMaterials()
 
 void DirextXEng::BuildRenderItems()
 {
-	auto skyRitem = std::make_unique<RenderItem>();
+	auto skyRitem = std::make_unique<RenderItem>(gNumFrameResources);
 	XMStoreFloat4x4(&skyRitem->World, XMMatrixScaling(5000.0f, 5000.0f, 5000.0f));
 	skyRitem->TexTransform = MathHelper::Identity4x4();
 	skyRitem->ObjCBIndex = 0;
@@ -1622,7 +1543,7 @@ void DirextXEng::BuildRenderItems()
 	mRitemLayer[(int)RenderLayer::Sky].push_back(skyRitem.get());
 	mAllRitems.push_back(std::move(skyRitem));
     
-    auto quadRitem = std::make_unique<RenderItem>();
+    auto quadRitem = std::make_unique<RenderItem>(gNumFrameResources);
     quadRitem->World = MathHelper::Identity4x4();
     quadRitem->TexTransform = MathHelper::Identity4x4();
     quadRitem->ObjCBIndex = 1;
@@ -1636,7 +1557,7 @@ void DirextXEng::BuildRenderItems()
     mRitemLayer[(int)RenderLayer::Debug].push_back(quadRitem.get());
     mAllRitems.push_back(std::move(quadRitem));
     
-	auto boxRitem = std::make_unique<RenderItem>();
+	auto boxRitem = std::make_unique<RenderItem>(gNumFrameResources);
 	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 1.0f, 2.0f)*XMMatrixTranslation(0.0f, 0.5f, 0.0f));
 	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	boxRitem->ObjCBIndex = 2;
@@ -1650,7 +1571,7 @@ void DirextXEng::BuildRenderItems()
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
 	mAllRitems.push_back(std::move(boxRitem));
 
-    auto gridRitem = std::make_unique<RenderItem>();
+    auto gridRitem = std::make_unique<RenderItem>(gNumFrameResources);
     gridRitem->World = MathHelper::Identity4x4();
 	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
 	gridRitem->ObjCBIndex = 3;
@@ -1668,10 +1589,10 @@ void DirextXEng::BuildRenderItems()
 	UINT objCBIndex = 4;
 	for(int i = 0; i < 5; ++i)
 	{
-		auto leftCylRitem = std::make_unique<RenderItem>();
-		auto rightCylRitem = std::make_unique<RenderItem>();
-		auto leftSphereRitem = std::make_unique<RenderItem>();
-		auto rightSphereRitem = std::make_unique<RenderItem>();
+		auto leftCylRitem = std::make_unique<RenderItem>(gNumFrameResources);
+		auto rightCylRitem = std::make_unique<RenderItem>(gNumFrameResources);
+		auto leftSphereRitem = std::make_unique<RenderItem>(gNumFrameResources);
+		auto rightSphereRitem = std::make_unique<RenderItem>(gNumFrameResources);
 
 		XMMATRIX leftCylWorld = XMMatrixTranslation(-5.0f, 1.5f, -10.0f + i*5.0f);
 		XMMATRIX rightCylWorld = XMMatrixTranslation(+5.0f, 1.5f, -10.0f + i*5.0f);
@@ -1734,7 +1655,7 @@ void DirextXEng::BuildRenderItems()
     {
         std::string submeshName = "sm_" + std::to_string(i);
 
-        auto ritem = std::make_unique<RenderItem>();
+        auto ritem = std::make_unique<RenderItem>(gNumFrameResources);
 
         // Reflect to change coordinate system from the RHS the data was exported out as.
         XMMATRIX modelScale = XMMatrixScaling(0.05f, 0.05f, -0.05f);
@@ -1753,7 +1674,7 @@ void DirextXEng::BuildRenderItems()
 
         // All render items for this solider.m3d instance share
         // the same skinned model instance.
-        ritem->SkinnedCBIndex = 0;
+        ritem->RenderCBIndex = 0;
         ritem->SkinnedModelInst = mSkinnedModelInst.get();
 
         mRitemLayer[(int)RenderLayer::SkinnedOpaque].push_back(ritem.get());
@@ -1784,7 +1705,7 @@ void DirextXEng::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::
 
         if(ri->SkinnedModelInst != nullptr)
         {
-            D3D12_GPU_VIRTUAL_ADDRESS skinnedCBAddress = skinnedCB->GetGPUVirtualAddress() + ri->SkinnedCBIndex*skinnedCBByteSize;
+            D3D12_GPU_VIRTUAL_ADDRESS skinnedCBAddress = skinnedCB->GetGPUVirtualAddress() + ri->RenderCBIndex*skinnedCBByteSize;
             cmdList->SetGraphicsRootConstantBufferView(1, skinnedCBAddress);
         }
         else

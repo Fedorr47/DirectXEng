@@ -152,12 +152,19 @@
     <ClInclude Include="Common\GameTimer.h" />
     <ClInclude Include="Common\GeometryGenerator.h" />
     <ClInclude Include="Common\MathHelper.h" />
+    <ClInclude Include="Common\RenderItem.h" />
     <ClInclude Include="Common\UploadBuffer.h" />
     <ClInclude Include="FrameResource\FrameResource.h" />
     <ClInclude Include="LoadM3d.h" />
     <ClInclude Include="Shadow\ShadowMap.h" />
     <ClInclude Include="SkinnedData.h" />
     <ClInclude Include="SSAO\Ssao.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Meshes\SkinnedMesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Controlls\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
