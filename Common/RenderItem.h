@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <DirectXMath.h>
-#include "MathHelper.h"
+#include "Math/MathHelper.h"
 #include "d3dUtil.h"
 #include "SkinnedMesh.h"
 

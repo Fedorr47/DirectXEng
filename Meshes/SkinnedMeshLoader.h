@@ -1,7 +1,8 @@
 #pragma once
+
 #include <filesystem>
 #include <vector>
-#include "../LoadM3d.h"
+#include "LoadM3d.h"
 #include "d3dUtil.h"
 
 struct MeshGeometry;

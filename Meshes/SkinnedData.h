@@ -1,8 +1,6 @@
-#ifndef SKINNEDDATA_H
-#define SKINNEDDATA_H
+#pragma once
 
 #include "Common/d3dUtil.h"
-#include "Common/MathHelper.h"
 
 ///<summary>
 /// A Keyframe defines the bone transformation at an instant in time.
@@ -78,5 +76,3 @@ private:
    
 	std::unordered_map<std::string, AnimationClip> mAnimations;
 };
- 
-#endif // SKINNEDDATA_H

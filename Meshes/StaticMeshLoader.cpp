@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "d3dUtil.h"
-#include "MathHelper.h"
 #include "FrameResource/FrameResource.h"
 
 

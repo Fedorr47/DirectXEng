@@ -1,10 +1,14 @@
 #include "XEngine.h"
 
-#include "Common/d3dApp.h"
-#include "Common/MathHelper.h"
+#include <DirectXColors.h>
+#include <DirectXPackedVector.h>
+#include <array>
+
+#include "Window/d3dApp.h"
+#include "Math/MathHelper.h"
 #include "Common/UploadBuffer.h"
-#include "Common/GeometryGenerator.h"
-#include "Common/Camera.h"
+#include "Geometry/GeometryGenerator.h"
+#include "Camera/Camera.h"
 #include "FrameResource/FrameResource.h"
 #include "Shadow/ShadowMap.h"
 #include "SSAO/Ssao.h"
@@ -733,6 +737,21 @@ void DirextXEng::LoadTextures()
 		L"Textures/desertcube1024.dds"
 	};
 
+	/*
+	for (size_t i = 0; i < texNames.size(); ++i)
+	{
+		mTextureManager->AddTexture(texNames[i], texFilenames[i]);
+	}
+
+	for (const auto& mat : mSkinnedMats)
+	{
+		mTextureManager->AddSkinnedTexture(mat.DiffuseMapName);
+		mTextureManager->AddSkinnedTexture(mat.NormalMapName);
+	} 
+
+	mTextures = mTextureManager->GetTextures();
+	*/
+	
     // Add skinned model textures to list so we can reference by name later.
     for(UINT i = 0; i < mSkinnedMats.size(); ++i)
     {
