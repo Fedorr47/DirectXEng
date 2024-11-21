@@ -1,49 +1,84 @@
-/*std::vector<M3DLoader::SkinnedVertex> vertices;
-std::vector<std::uint16_t> indices;	
- 
-M3DLoader m3dLoader;
-m3dLoader.LoadM3d(mSkinnedModelFilename, vertices, indices, 
-    mSkinnedSubsets, mSkinnedMats, mSkinnedInfo);
+#include "SkinnedMeshLoader.h"
 
-mSkinnedModelInst = std::make_unique<SkinnedModelInstance>();
-mSkinnedModelInst->SkinnedInfo = &mSkinnedInfo;
-mSkinnedModelInst->FinalTransforms.resize(mSkinnedInfo.BoneCount());
-mSkinnedModelInst->ClipName = "Take1";
-mSkinnedModelInst->TimePos = 0.0f;
- 
-const UINT vbByteSize = (UINT)vertices.size() * sizeof(SkinnedVertex);
-const UINT ibByteSize = (UINT)indices.size()  * sizeof(std::uint16_t);
+#include <d3d12.h>
+#include <D3Dcompiler.h>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <vector>
 
-auto geo = std::make_unique<MeshGeometry>();
-geo->Name = mSkinnedModelFilename;
+#include "d3dUtil.h"
+#include "LoadM3d.h"
+#include "SkinnedData.h"
+#include "SkinnedMesh.h"
+#include "FrameResource/FrameResource.h"
 
-ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
-
-ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
-
-geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-    mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
-
-geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-    mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
-
-geo->VertexByteStride = sizeof(SkinnedVertex);
-geo->VertexBufferByteSize = vbByteSize;
-geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-geo->IndexBufferByteSize = ibByteSize;
-
-for(UINT i = 0; i < (UINT)mSkinnedSubsets.size(); ++i)
+std::unique_ptr<MeshGeometry> SkinnedMeshLoader::LoadSkinnedModel(
+    std::string_view skinnedModelFilename,
+    ID3D12Device* device,
+    ID3D12GraphicsCommandList* cmdList,
+    SkinnedData& skinnedInfo,
+    std::unique_ptr<SkinnedModelInstance>& skinnedModelInst,
+    std::vector<M3DLoader::Subset>& skinnedSubsets,
+    std::vector<M3DLoader::M3dMaterial>& skinnedMats)
 {
-    SubmeshGeometry submesh;
-    std::string name = "sm_" + std::to_string(i);
-		
-    submesh.IndexCount = (UINT)mSkinnedSubsets[i].FaceCount * 3;
-    submesh.StartIndexLocation = mSkinnedSubsets[i].FaceStart * 3;
-    submesh.BaseVertexLocation = 0;
+    std::filesystem::path filePath = skinnedModelFilename;
+    if (!std::filesystem::exists(filePath))
+    {
+        throw std::runtime_error("File not found: " + filePath.string());
+    }
+    
+    std::vector<M3DLoader::SkinnedVertex> vertices;
+    std::vector<std::uint16_t> indices;
 
-    geo->DrawArgs[name] = submesh;
+    M3DLoader m3dLoader;
+    m3dLoader.LoadM3d(filePath.string(), vertices, indices, skinnedSubsets, skinnedMats, skinnedInfo);
+    
+    skinnedModelInst = std::make_unique<SkinnedModelInstance>();
+    skinnedModelInst->SkinnedInfo = &skinnedInfo;
+    skinnedModelInst->FinalTransforms.resize(skinnedInfo.BoneCount());
+    // TODO: Rename this
+    skinnedModelInst->ClipName = "Take1";
+    skinnedModelInst->TimePos = 0.0f;
+    
+    const UINT vbByteSize = static_cast<UINT>(vertices.size() * sizeof(SkinnedVertex));
+    const UINT ibByteSize = static_cast<UINT>(indices.size() * sizeof(std::uint16_t));
+
+    auto geo = std::make_unique<MeshGeometry>();
+    // TODO: It is a correct string, but rihgt now I need to use the next one
+    //geo->Name = filePath.filename().string();
+    geo->Name = skinnedModelFilename;
+    
+    ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+    CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+    
+    geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(
+        device, cmdList, vertices.data(), vbByteSize, geo->VertexBufferUploader);
+
+    geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(
+        device, cmdList, indices.data(), ibByteSize, geo->IndexBufferUploader);
+    
+    geo->VertexByteStride = sizeof(M3DLoader::SkinnedVertex);
+    geo->VertexBufferByteSize = vbByteSize;
+    geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+    geo->IndexBufferByteSize = ibByteSize;
+    
+    for (UINT i = 0; i < static_cast<UINT>(skinnedSubsets.size()); ++i)
+    {
+        SubmeshGeometry submesh;
+        std::string name = "sm_" + std::to_string(i);
+
+        submesh.IndexCount = skinnedSubsets[i].FaceCount * 3;
+        submesh.StartIndexLocation = skinnedSubsets[i].FaceStart * 3;
+        submesh.BaseVertexLocation = 0;
+
+        geo->DrawArgs[name] = submesh;
+    }
+
+    return geo;
 }
-
-mGeometries[geo->Name] = std::move(geo);*/

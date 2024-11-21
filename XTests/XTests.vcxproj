@@ -36,7 +36,10 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="D3D12Mock.cpp" />
     <ClCompile Include="RnederItemTests.cpp" />
+    <ClCompile Include="SkinnedMeshLoaderTests.cpp" />
+    <ClCompile Include="StaticMeshLoaderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -46,6 +49,9 @@
       <Project>{5166ddef-a11a-499a-92a0-14453b957bcf}</Project>
       <Name>DirectXEng</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="D3D2Mock.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -77,6 +83,9 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;../Common;../Meshes;../FrameResource;../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <ConformanceMode>false</ConformanceMode>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
