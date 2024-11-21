@@ -3,8 +3,6 @@
 
 #include "SkinnedData.h"
 
-
-
 class M3DLoader
 {
 public:
