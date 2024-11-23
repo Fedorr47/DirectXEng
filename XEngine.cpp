@@ -1,5 +1,6 @@
 #include "XEngine.h"
 
+#include "Controlls/InputController.h"
 #include "Texture/TextureManager.h"
 
 const int gNumFrameResources = 3;
@@ -50,15 +51,17 @@ DirextXEng::~DirextXEng()
 
 bool DirextXEng::Initialize()
 {
+	mCamera = std::make_shared<Camera>();
     if(!D3DApp::Initialize())
         return false;
 
     // Reset the command list to prep for initialization commands.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
-
+	
 	mTextureManager = std::make_unique<TextureManager>(md3dDevice.Get(),mCommandList.Get());
+	mInputController = std::make_unique<InputController>(mCamera, mhMainWnd);
 
-	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
+	mCamera->SetPosition(0.0f, 2.0f, -15.0f);
  
     mShadowMap = std::make_unique<ShadowMap>(md3dDevice.Get(),
         2048, 2048);
@@ -81,13 +84,10 @@ bool DirextXEng::Initialize()
     BuildPSOs();
 
     mSsao->SetPSOs(mPSOs["ssao"].Get(), mPSOs["ssaoBlur"].Get());
-
-    // Execute the initialization commands.
+	
     ThrowIfFailed(mCommandList->Close());
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-    // Wait until initialization is complete.
     FlushCommandQueue();
 
     return true;
@@ -118,27 +118,22 @@ void DirextXEng::OnResize()
 {
     D3DApp::OnResize();
 
-	mCamera.SetLens(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+	mCamera->SetLens(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
 
     if(mSsao != nullptr)
     {
         mSsao->OnResize(mClientWidth, mClientHeight);
-
-        // Resources changed, so need to rebuild descriptors.
         mSsao->RebuildDescriptors(mDepthStencilBuffer.Get());
     }
 }
 
 void DirextXEng::Update(const GameTimer& gt)
 {
-    OnKeyboardInput(gt);
-
-    // Cycle through the circular frame resource array.
+    mInputController->OnKeyboardInput(gt);
+	
     mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
     mCurrFrameResource = mFrameResources[mCurrFrameResourceIndex].get();
-
-    // Has the GPU finished processing the commands of the current frame resource?
-    // If not, wait until the GPU has completed commands up to this fence point.
+	
     if(mCurrFrameResource->Fence != 0 && mFence->GetCompletedValue() < mCurrFrameResource->Fence)
     {
         HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
@@ -174,9 +169,7 @@ void DirextXEng::Update(const GameTimer& gt)
 void DirextXEng::Draw(const GameTimer& gt)
 {
     auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
-
-    // Reuse the memory associated with command recording.
-    // We can only reset when the associated command lists have finished execution on the GPU.
+	
     ThrowIfFailed(cmdListAlloc->Reset());
 
     // A command list can be reset after it has been added to the command queue via ExecuteCommandList.
@@ -301,53 +294,6 @@ void DirextXEng::Draw(const GameTimer& gt)
     mCommandQueue->Signal(mFence.Get(), mCurrentFence);
 }
 
-void DirextXEng::OnMouseDown(WPARAM btnState, int x, int y)
-{
-    mLastMousePos.x = x;
-    mLastMousePos.y = y;
-
-    SetCapture(mhMainWnd);
-}
-
-void DirextXEng::OnMouseUp(WPARAM btnState, int x, int y)
-{
-    ReleaseCapture();
-}
-
-void DirextXEng::OnMouseMove(WPARAM btnState, int x, int y)
-{
-    if((btnState & MK_LBUTTON) != 0)
-    {
-		// Make each pixel correspond to a quarter of a degree.
-		float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
-		float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
-
-		mCamera.Pitch(dy);
-		mCamera.RotateY(dx);
-    }
-
-    mLastMousePos.x = x;
-    mLastMousePos.y = y;
-}
- 
-void DirextXEng::OnKeyboardInput(const GameTimer& gt)
-{
-	const float dt = gt.DeltaTime();
-
-	if(GetAsyncKeyState('W') & 0x8000)
-		mCamera.Walk(10.0f*dt);
-
-	if(GetAsyncKeyState('S') & 0x8000)
-		mCamera.Walk(-10.0f*dt);
-
-	if(GetAsyncKeyState('A') & 0x8000)
-		mCamera.Strafe(-10.0f*dt);
-
-	if(GetAsyncKeyState('D') & 0x8000)
-		mCamera.Strafe(10.0f*dt);
-
-	mCamera.UpdateViewMatrix();
-}
  
 void DirextXEng::AnimateMaterials(const GameTimer& gt)
 {
@@ -465,8 +411,8 @@ void DirextXEng::UpdateShadowTransform(const GameTimer& gt)
 
 void DirextXEng::UpdateMainPassCB(const GameTimer& gt)
 {
-	XMMATRIX view = mCamera.GetView();
-	XMMATRIX proj = mCamera.GetProj();
+	XMMATRIX view = mCamera->GetView();
+	XMMATRIX proj = mCamera->GetProj();
 
 	XMMATRIX viewProj = XMMatrixMultiply(view, proj);
 	XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
@@ -491,7 +437,7 @@ void DirextXEng::UpdateMainPassCB(const GameTimer& gt)
 	XMStoreFloat4x4(&mMainPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
     XMStoreFloat4x4(&mMainPassCB.ViewProjTex, XMMatrixTranspose(viewProjTex));
     XMStoreFloat4x4(&mMainPassCB.ShadowTransform, XMMatrixTranspose(shadowTransform));
-	mMainPassCB.EyePosW = mCamera.GetPosition3f();
+	mMainPassCB.EyePosW = mCamera->GetPosition3f();
 	mMainPassCB.RenderTargetSize = XMFLOAT2((float)mClientWidth, (float)mClientHeight);
 	mMainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / mClientWidth, 1.0f / mClientHeight);
 	mMainPassCB.NearZ = 1.0f;
@@ -543,7 +489,7 @@ void DirextXEng::UpdateSsaoCB(const GameTimer& gt)
 {
     SsaoConstants ssaoCB;
 
-    XMMATRIX P = mCamera.GetProj();
+    XMMATRIX P = mCamera->GetProj();
 
     // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
     XMMATRIX T(
@@ -1687,4 +1633,3 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> DirextXEng::GetStaticSamplers()
         shadow 
     };
 }
-

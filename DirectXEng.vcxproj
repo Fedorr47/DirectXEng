@@ -207,6 +207,7 @@
     </ClCompile>
     <ClCompile Include="Common\d3dUtil.cpp" />
     <ClCompile Include="Common\DDSTextureLoader.cpp" />
+    <ClCompile Include="Controlls\InputController.cpp" />
     <ClCompile Include="FrameResource\FrameResource.cpp" />
     <ClCompile Include="Geometry\GeometryGenerator.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -672,6 +673,7 @@
     <ClInclude Include="Common\DDSTextureLoader.h" />
     <ClInclude Include="Common\RenderItem.h" />
     <ClInclude Include="Common\UploadBuffer.h" />
+    <ClInclude Include="Controlls\InputController.h" />
     <ClInclude Include="FrameResource\FrameResource.h" />
     <ClInclude Include="Geometry\GeometryGenerator.h" />
     <ClInclude Include="Math\MathHelper.h" />
@@ -688,9 +690,6 @@
     <Content Include="Meshes\SkinnedMesh.h" />
     <Content Include="Meshes\StaticMeshLoader.h" />
     <Content Include="Texture\TextureManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controlls\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

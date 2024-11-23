@@ -1,6 +1,7 @@
 D:\C++projects\DirectXEng\Camera\Camera.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\Camera.obj
 D:\C++projects\DirectXEng\Common\d3dUtil.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\d3dUtil.obj
 D:\C++projects\DirectXEng\Common\DDSTextureLoader.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\DDSTextureLoader.obj
+D:\C++projects\DirectXEng\Controlls\InputController.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\InputController.obj
 D:\C++projects\DirectXEng\FrameResource\FrameResource.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\FrameResource.obj
 D:\C++projects\DirectXEng\Geometry\GeometryGenerator.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\GeometryGenerator.obj
 D:\C++projects\DirectXEng\Math\MathHelper.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\MathHelper.obj

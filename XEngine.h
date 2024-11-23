@@ -34,10 +34,6 @@ private:
     virtual void Update(const GameTimer& gt) override;
     virtual void Draw(const GameTimer& gt) override;
 
-    virtual void OnMouseDown(WPARAM btnState, int x, int y) override;
-    virtual void OnMouseUp(WPARAM btnState, int x, int y) override;
-    virtual void OnMouseMove(WPARAM btnState, int x, int y) override;
-
     void OnKeyboardInput(const GameTimer& gt);
 	void AnimateMaterials(const GameTimer& gt);
 	void UpdateObjectCBs(const GameTimer& gt);
@@ -116,7 +112,7 @@ private:
     std::vector<M3DLoader::M3dMaterial> mSkinnedMats;
     std::vector<std::string> mSkinnedTextureNames;
 
-	Camera mCamera;
+	std::shared_ptr<Camera> mCamera;
 
     std::unique_ptr<ShadowMap> mShadowMap;
     std::unique_ptr<Ssao> mSsao;

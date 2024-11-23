@@ -17,6 +17,8 @@
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+class InputController;
+
 class D3DApp
 {
 protected:
@@ -124,5 +126,7 @@ protected:
     DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int mClientWidth = 800;
 	int mClientHeight = 600;
+
+	std::unique_ptr<InputController> mInputController{nullptr};
 };
 
