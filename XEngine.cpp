@@ -1,152 +1,12 @@
 #include "XEngine.h"
 
-#include <DirectXColors.h>
-#include <DirectXPackedVector.h>
-#include <array>
-
-#include "Window/d3dApp.h"
-#include "Math/MathHelper.h"
-#include "Common/UploadBuffer.h"
-#include "Geometry/GeometryGenerator.h"
-#include "Camera/Camera.h"
-#include "FrameResource/FrameResource.h"
-#include "Shadow/ShadowMap.h"
-#include "SSAO/Ssao.h"
-#include "Common/RenderItem.h"
-#include "Meshes/SkinnedMeshLoader.h"
-#include "LoadM3d.h"
+#include "Texture/TextureManager.h"
 
 const int gNumFrameResources = 3;
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
-
-class DirextXEng : public D3DApp
-{
-public:
-    DirextXEng(HINSTANCE hInstance);
-    DirextXEng(const DirextXEng& rhs) = delete;
-    DirextXEng& operator=(const DirextXEng& rhs) = delete;
-    ~DirextXEng();
-
-    virtual bool Initialize()override;
-
-private:
-    virtual void CreateRtvAndDsvDescriptorHeaps()override;
-    virtual void OnResize()override;
-    virtual void Update(const GameTimer& gt)override;
-    virtual void Draw(const GameTimer& gt)override;
-
-    virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
-    virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
-    virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
-
-    void OnKeyboardInput(const GameTimer& gt);
-	void AnimateMaterials(const GameTimer& gt);
-	void UpdateObjectCBs(const GameTimer& gt);
-    void UpdateSkinnedCBs(const GameTimer& gt);
-	void UpdateMaterialBuffer(const GameTimer& gt);
-    void UpdateShadowTransform(const GameTimer& gt);
-	void UpdateMainPassCB(const GameTimer& gt);
-    void UpdateShadowPassCB(const GameTimer& gt);
-    void UpdateSsaoCB(const GameTimer& gt);
-
-	void LoadTextures();
-    void BuildRootSignature();
-    void BuildSsaoRootSignature();
-	void BuildDescriptorHeaps();
-    void BuildShadersAndInputLayout();
-    void BuildShapeGeometry();
-	void LoadSkinnedModel();
-    void BuildPSOs();
-    void BuildFrameResources();
-    void BuildMaterials();
-    void BuildRenderItems();
-    void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
-    void DrawSceneToShadowMap();
-	void DrawNormalsAndDepth();
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE GetCpuSrv(int index)const;
-    CD3DX12_GPU_DESCRIPTOR_HANDLE GetGpuSrv(int index)const;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsv(int index)const;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtv(int index)const;
-
-	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers();
-
-private:
-
-    std::vector<std::unique_ptr<FrameResource>> mFrameResources;
-    FrameResource* mCurrFrameResource = nullptr;
-    int mCurrFrameResourceIndex = 0;
-
-    ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-    ComPtr<ID3D12RootSignature> mSsaoRootSignature = nullptr;
-
-	ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
-
-	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
-	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
-	std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
-	std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
-	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
-
-    std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-    std::vector<D3D12_INPUT_ELEMENT_DESC> mSkinnedInputLayout;
- 
-	// List of all the render items.
-	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
-
-	// Render items divided by PSO.
-	std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
-
-	UINT mSkyTexHeapIndex = 0;
-    UINT mShadowMapHeapIndex = 0;
-    UINT mSsaoHeapIndexStart = 0;
-    UINT mSsaoAmbientMapIndex = 0;
-
-    UINT mNullCubeSrvIndex = 0;
-    UINT mNullTexSrvIndex1 = 0;
-    UINT mNullTexSrvIndex2 = 0;
-
-    CD3DX12_GPU_DESCRIPTOR_HANDLE mNullSrv;
-
-    PassConstants mMainPassCB;  // index 0 of pass cbuffer.
-    PassConstants mShadowPassCB;// index 1 of pass cbuffer.
-
-    UINT mSkinnedSrvHeapStart = 0;
-    std::string mSkinnedModelFilename = "Models\\soldier.m3d";
-    std::unique_ptr<SkinnedModelInstance> mSkinnedModelInst; 
-    SkinnedData mSkinnedInfo;
-    std::vector<M3DLoader::Subset> mSkinnedSubsets;
-    std::vector<M3DLoader::M3dMaterial> mSkinnedMats;
-    std::vector<std::string> mSkinnedTextureNames;
-
-	Camera mCamera;
-
-    std::unique_ptr<ShadowMap> mShadowMap;
-
-    std::unique_ptr<Ssao> mSsao;
-
-    DirectX::BoundingSphere mSceneBounds;
-
-    float mLightNearZ = 0.0f;
-    float mLightFarZ = 0.0f;
-    XMFLOAT3 mLightPosW;
-    XMFLOAT4X4 mLightView = MathHelper::Identity4x4();
-    XMFLOAT4X4 mLightProj = MathHelper::Identity4x4();
-    XMFLOAT4X4 mShadowTransform = MathHelper::Identity4x4();
-
-    float mLightRotationAngle = 0.0f;
-    XMFLOAT3 mBaseLightDirections[3] = {
-        XMFLOAT3(0.57735f, -0.57735f, 0.57735f),
-        XMFLOAT3(-0.57735f, -0.57735f, 0.57735f),
-        XMFLOAT3(0.0f, -0.707f, -0.707f)
-    };
-    XMFLOAT3 mRotatedLightDirections[3];
-
-    POINT mLastMousePos;
-};
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
     PSTR cmdLine, int showCmd)
@@ -195,6 +55,8 @@ bool DirextXEng::Initialize()
 
     // Reset the command list to prep for initialization commands.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+
+	mTextureManager = std::make_unique<TextureManager>(md3dDevice.Get(),mCommandList.Get());
 
 	mCamera.SetPosition(0.0f, 2.0f, -15.0f);
  
@@ -736,8 +598,7 @@ void DirextXEng::LoadTextures()
 		L"Textures/default_nmap.dds",
 		L"Textures/desertcube1024.dds"
 	};
-
-	/*
+	
 	for (size_t i = 0; i < texNames.size(); ++i)
 	{
 		mTextureManager->AddTexture(texNames[i], texFilenames[i]);
@@ -745,50 +606,9 @@ void DirextXEng::LoadTextures()
 
 	for (const auto& mat : mSkinnedMats)
 	{
-		mTextureManager->AddSkinnedTexture(mat.DiffuseMapName);
-		mTextureManager->AddSkinnedTexture(mat.NormalMapName);
-	} 
-
-	mTextures = mTextureManager->GetTextures();
-	*/
-	
-    // Add skinned model textures to list so we can reference by name later.
-    for(UINT i = 0; i < mSkinnedMats.size(); ++i)
-    {
-        std::string diffuseName = mSkinnedMats[i].DiffuseMapName;
-        std::string normalName = mSkinnedMats[i].NormalMapName;
-
-        std::wstring diffuseFilename = L"Textures/" + AnsiToWString(diffuseName);
-        std::wstring normalFilename = L"Textures/" + AnsiToWString(normalName);
-
-        // strip off extension
-        diffuseName = diffuseName.substr(0, diffuseName.find_last_of("."));
-        normalName = normalName.substr(0, normalName.find_last_of("."));
-
-        mSkinnedTextureNames.push_back(diffuseName);
-        texNames.push_back(diffuseName);
-        texFilenames.push_back(diffuseFilename);
-
-        mSkinnedTextureNames.push_back(normalName);
-        texNames.push_back(normalName);
-        texFilenames.push_back(normalFilename);
-    }
-	
-	for(int i = 0; i < (int)texNames.size(); ++i)
-	{
-        // Don't create duplicates.
-        if(mTextures.find(texNames[i]) == std::end(mTextures))
-        {
-            auto texMap = std::make_unique<Texture>();
-            texMap->Name = texNames[i];
-            texMap->Filename = texFilenames[i];
-            ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-                mCommandList.Get(), texMap->Filename.c_str(),
-                texMap->Resource, texMap->UploadHeap));
-
-            mTextures[texMap->Name] = std::move(texMap);
-        }
-	}		
+		mTextureManager->AddSkinnedTexture(mat.DiffuseMapName, mSkinnedTextureNames);
+		mTextureManager->AddSkinnedTexture(mat.NormalMapName, mSkinnedTextureNames);
+	}
 }
 
 void DirextXEng::BuildRootSignature()
@@ -930,27 +750,29 @@ void DirextXEng::BuildDescriptorHeaps()
 	//
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
+	auto& Textures = mTextureManager->GetTextures();
+
 	std::vector<ComPtr<ID3D12Resource>> tex2DList = 
 	{
-		mTextures["bricksDiffuseMap"]->Resource,
-		mTextures["bricksNormalMap"]->Resource,
-		mTextures["tileDiffuseMap"]->Resource,
-		mTextures["tileNormalMap"]->Resource,
-		mTextures["defaultDiffuseMap"]->Resource,
-		mTextures["defaultNormalMap"]->Resource
+		Textures.at("bricksDiffuseMap")->Resource,
+		Textures.at("bricksNormalMap")->Resource,
+		Textures.at("tileDiffuseMap")->Resource,
+		Textures.at("tileNormalMap")->Resource,
+		Textures.at("defaultDiffuseMap")->Resource,
+		Textures.at("defaultNormalMap")->Resource
 	};
 
     mSkinnedSrvHeapStart = (UINT)tex2DList.size();
 
     for(UINT i = 0; i < (UINT)mSkinnedTextureNames.size(); ++i)
     {
-        auto texResource = mTextures[mSkinnedTextureNames[i]]->Resource;
+        auto texResource = Textures.at(mSkinnedTextureNames[i])->Resource;
         assert(texResource != nullptr);
         tex2DList.push_back(texResource);
     }
 	
 
-	auto skyCubeMap = mTextures["skyCubeMap"]->Resource;
+	auto skyCubeMap = Textures.at("skyCubeMap")->Resource;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

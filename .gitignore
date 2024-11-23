@@ -1,3 +1,7 @@
 
 /.vs
 /packages
+/DirectXEng/x64/Debug
+/DirectXEng/x64/Debug
+*.tlog
+*.tlog

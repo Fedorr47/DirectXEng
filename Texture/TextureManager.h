@@ -13,7 +13,7 @@ public:
         : mDevice(device), mCmdList(cmdList) {}
 
     void AddTexture(const std::string& name, const std::wstring& filename);
-    void AddSkinnedTexture(const std::string& textureName);
+    void AddSkinnedTexture(const std::string& textureName, std::vector<std::string>& SkinnedTextureNames);
     const std::unordered_map<std::string, std::unique_ptr<Texture>>& GetTextures() const { return mTextures; }
 
 private:
@@ -21,5 +21,5 @@ private:
     ID3D12GraphicsCommandList* mCmdList;
     std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
 
-    std::wstring StripExtension(const std::string& filename) const;
+    std::string StripExtension(const std::string& filename) const;
 };

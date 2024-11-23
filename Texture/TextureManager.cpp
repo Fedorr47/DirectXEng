@@ -20,14 +20,15 @@ void TextureManager::AddTexture(const std::string& name, const std::wstring& fil
     }
 }
 
-void TextureManager::AddSkinnedTexture(const std::string& textureName)
+void TextureManager::AddSkinnedTexture(const std::string& textureName, std::vector<std::string>& SkinnedTextureNames)
 {
     std::wstring filename = L"Textures/" + AnsiToWString(textureName);
-    std::wstring nameWithoutExtension = StripExtension(textureName);
-    //AddTexture(nameWithoutExtension, filename);
+    std::string nameWithoutExtension = StripExtension(textureName);
+    SkinnedTextureNames.push_back(nameWithoutExtension);
+    AddTexture(nameWithoutExtension, filename);
 }
 
-std::wstring TextureManager::StripExtension(const std::string& filename) const
+std::string TextureManager::StripExtension(const std::string& filename) const
 {
-    return std::wstring(filename.begin(), filename.begin() + filename.find_last_of('.'));
+    return std::string(filename.begin(), filename.begin() + filename.find_last_of('.'));
 }
