@@ -1,0 +1,1 @@
+Above the all it is just my project to deeply understand rendering and all stuff around that. Originally I've taken the last example from F.Luna book and try to modify it to something closer to 'Engine'
