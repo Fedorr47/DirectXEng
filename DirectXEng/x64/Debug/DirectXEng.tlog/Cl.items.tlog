@@ -7,6 +7,12 @@ D:\C++projects\DirectXEng\Geometry\GeometryGenerator.cpp;D:\C++projects\DirectXE
 D:\C++projects\DirectXEng\Math\MathHelper.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\MathHelper.obj
 D:\C++projects\DirectXEng\Meshes\LoadM3d.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\LoadM3d.obj
 D:\C++projects\DirectXEng\Texture\TextureManager.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\TextureManager.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\backends\imgui_impl_dx12.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui_impl_dx12.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\backends\imgui_impl_win32.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui_impl_win32.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\imgui.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\imgui_draw.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui_draw.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\imgui_tables.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui_tables.obj
+D:\C++projects\DirectXEng\ThirdParty\imgui\imgui_widgets.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\imgui_widgets.obj
 D:\C++projects\DirectXEng\Timer\GameTimer.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\GameTimer.obj
 D:\C++projects\DirectXEng\Window\d3dApp.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\d3dApp.obj
 D:\C++projects\DirectXEng\XEngine.cpp;D:\C++projects\DirectXEng\DirectXEng\x64\Debug\XEngine.obj

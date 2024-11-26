@@ -3,6 +3,10 @@
 #include "Controlls/InputController.h"
 #include "Texture/TextureManager.h"
 
+#include "imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
+
 const int gNumFrameResources = 3;
 
 using Microsoft::WRL::ComPtr;
@@ -84,6 +88,29 @@ bool DirextXEng::Initialize()
     BuildPSOs();
 
     mSsao->SetPSOs(mPSOs["ssao"].Get(), mPSOs["ssaoBlur"].Get());
+
+	// imgui start
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+	srvHeapDesc.NumDescriptors = 1; // Количество дескрипторов
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mImGuiSrvHeap)));
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+	ImGui_ImplWin32_Init(mhMainWnd);
+	ImGui_ImplDX12_Init(
+		md3dDevice.Get(),            
+		gNumFrameResources,        
+		DXGI_FORMAT_R8G8B8A8_UNORM,  
+		mImGuiSrvHeap.Get(),     
+		mImGuiSrvHeap->GetCPUDescriptorHandleForHeapStart(),
+		mImGuiSrvHeap->GetGPUDescriptorHandleForHeapStart() 
+	);
+	// imgui end
 	
     ThrowIfFailed(mCommandList->Close());
     ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
@@ -167,10 +194,15 @@ void DirextXEng::Update(const GameTimer& gt)
 }
 
 void DirextXEng::Draw(const GameTimer& gt)
-{
+{	
     auto cmdListAlloc = mCurrFrameResource->CmdListAlloc;
 	
     ThrowIfFailed(cmdListAlloc->Reset());
+
+	// imgui start
+	ID3D12DescriptorHeap* imguiDescriptorHeaps[] = { mImGuiSrvHeap.Get() };
+	mCommandList->SetDescriptorHeaps(_countof(imguiDescriptorHeaps), imguiDescriptorHeaps);
+	// imgui end
 
     // A command list can be reset after it has been added to the command queue via ExecuteCommandList.
     // Reusing the command list reuses memory.
@@ -198,6 +230,12 @@ void DirextXEng::Draw(const GameTimer& gt)
     // The root signature knows how many descriptors are expected in the table.
     mCommandList->SetGraphicsRootDescriptorTable(5, mSrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
+	// imgui start
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	// imgui end
+	
     DrawSceneToShadowMap();
 
 	//
@@ -208,11 +246,17 @@ void DirextXEng::Draw(const GameTimer& gt)
 	
 	//
 	//
-	// 
+	//
+
+	// imgui start
+	ImGui::Begin("Hello, ImGui!");
+	ImGui::Text("This is a simple text.");
+	ImGui::SliderFloat("Float Slider", &mSliderValue, 0.0f, 1.0f); // пример слайдера
+	ImGui::End();
+	// imgui end
 	
     mCommandList->SetGraphicsRootSignature(mSsaoRootSignature.Get());
     mSsao->ComputeSsao(mCommandList.Get(), mCurrFrameResource, 2);
-	
 	//
 	// Main rendering pass.
 	//
@@ -274,6 +318,11 @@ void DirextXEng::Draw(const GameTimer& gt)
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
+	// imgui start
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+	// imgui end
+	
     // Done recording commands.
     ThrowIfFailed(mCommandList->Close());
 

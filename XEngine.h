@@ -138,4 +138,8 @@ private:
     POINT mLastMousePos;
 	
 	std::unique_ptr<TextureManager> mTextureManager{nullptr};
+
+	// imgui
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mImGuiSrvHeap;
+	float mSliderValue{1.0f};
 };

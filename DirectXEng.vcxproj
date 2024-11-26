@@ -80,6 +80,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d12.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -106,11 +107,12 @@
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Common;$(SolutionDir)Meshes;$(SolutionDir)FrameResources;$(SolutionDir)Shadow;$(SolutionDir)SSAO;$(SolutionDir)Controls;$(SolutionDir)Camera;$(SolutionDir)Geometry;$(SolutionDir)Math;$(SolutionDir)Timer;$(SolutionDir)Window;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)Common;$(SolutionDir)Meshes;$(SolutionDir)FrameResources;$(SolutionDir)Shadow;$(SolutionDir)SSAO;$(SolutionDir)Controls;$(SolutionDir)Camera;$(SolutionDir)Geometry;$(SolutionDir)Math;$(SolutionDir)Timer;$(SolutionDir)Window;$(SolutionDir)ThirdParty\imgui;$(SolutionDir)ThirdParty\imgui\backends;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);dxgi.lib;d3d12.lib;d3dcompiler.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -435,6 +437,12 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Texture\TextureManager.cpp" />
+    <ClCompile Include="ThirdParty\imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="ThirdParty\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Timer\GameTimer.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -682,6 +690,10 @@
     <ClInclude Include="Meshes\SkinnedMeshLoader.h" />
     <ClInclude Include="Shadow\ShadowMap.h" />
     <ClInclude Include="SSAO\Ssao.h" />
+    <ClInclude Include="ThirdParty\imgui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="ThirdParty\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="ThirdParty\imgui\imconfig.h" />
+    <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="Timer\GameTimer.h" />
     <ClInclude Include="Window\d3dApp.h" />
     <ClInclude Include="XEngine.h" />
